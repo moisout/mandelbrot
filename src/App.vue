@@ -1,17 +1,36 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <h1>Mandelbrot</h1>
+    <input type="number" name id v-model="c1" />
+    <input type="number" name id v-model="c2" />
+
+    <p>{{result}}</p>
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import Mandelbrot from '@/logic/mandelbrot'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+  },
+  data() {
+    return {
+      c1: 0,
+      c2: 0,
+      zX: 0,
+      zY: 0
+    }
+  },
+  methods: {
+    calculate(c1, c2) {
+    }
+  },
+  computed: {
+    result() {
+      return this.calculate(c1, c2)
+    }
   }
 }
 </script>
