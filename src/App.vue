@@ -28,6 +28,8 @@ export default {
       this.list = [];
       this.zX = 0;
       this.zY = 0;
+      this.c1 = parseFloat(this.c1)
+      this.c2 = parseFloat(this.c2)
       for (
         let index = 0;
         index < 100 && this.zX <= 2 && this.zY <= 2;
