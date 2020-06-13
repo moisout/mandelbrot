@@ -4,7 +4,7 @@
       <h1>Mandelbrot</h1>
       <div class="cutout">
         <label for="iterations">Iterationen</label>
-      <input id="iterations" type="text" v-model="iterations" />
+        <input id="iterations" type="text" v-model="iterations" />
         <label for="iterations">Maximum X</label>
         <input id="iterations" type="text" v-model="coords.maxX" />
         <label for="iterations">Minimum X</label>
@@ -13,10 +13,15 @@
         <input id="iterations" type="text" v-model="coords.maxY" />
         <label for="iterations">Minimum Y</label>
         <input id="iterations" type="text" v-model="coords.minY" />
+
+        <label for="iterations">Höhe</label>
+        <input id="iterations" type="text" v-model="canvasHeight" />
+        <label for="iterations">Breite</label>
+        <input id="iterations" type="text" v-model="canvasWidth" />
       </div>
       <button @click="drawCanvas">calculate</button>
     </div>
-    <canvas ref="calcCanvas" width="2560" height="2560" />
+    <canvas ref="calcCanvas" :width="canvasWidth" :height="canvasHeight" />
   </div>
 </template>
 
@@ -38,7 +43,9 @@ export default {
         maxX: 1,
         minY: -1.2,
         maxY: 1.2
-      }
+      },
+      canvasWidth: 1000,
+      canvasHeight: 1000
       // coords: {
       //   minX: -1.5,
       //   maxX: -0.5,
@@ -48,10 +55,9 @@ export default {
     }
   },
   mounted() {
-    window.addEventListener('resize', this.resize)
-    const canvas = this.$refs.calcCanvas
-    canvas.width = window.innerWidth - 15
-    canvas.height = window.innerHeight - 15
+    // window.addEventListener('resize', this.resize)
+    this.canvasWidth = window.innerWidth - 15
+    this.canvasHeight = window.innerHeight - 15
   },
   methods: {
     // getPointsFromCoordinates(coordX, coordY) {
@@ -89,6 +95,11 @@ export default {
     },
 
     testCanvas() {
+      this.coords.minX = parseFloat(this.coords.minX)
+      this.coords.maxX = parseFloat(this.coords.maxX)
+      this.coords.minY = parseFloat(this.coords.minY)
+      this.coords.maxY = parseFloat(this.coords.maxY)
+
       const canvas = this.$refs.calcCanvas
       const canvasContext = canvas.getContext('2d')
       canvasContext.fillStyle = 'rgba(0,0,0,1)'
