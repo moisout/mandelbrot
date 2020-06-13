@@ -2,15 +2,21 @@
   <div id="app">
     <div class="header">
       <h1>Mandelbrot</h1>
-      <!-- <input type="text" name id v-model="c1" /> -->
-      <!-- <input type="text" name id v-model="c2" /> -->
+      <div class="cutout">
+        <label for="iterations">Iterationen</label>
+      <input id="iterations" type="text" v-model="iterations" />
+        <label for="iterations">Maximum X</label>
+        <input id="iterations" type="text" v-model="coords.maxX" />
+        <label for="iterations">Minimum X</label>
+        <input id="iterations" type="text" v-model="coords.minX" />
+        <label for="iterations">Maximum Y</label>
+        <input id="iterations" type="text" v-model="coords.maxY" />
+        <label for="iterations">Minimum Y</label>
+        <input id="iterations" type="text" v-model="coords.minY" />
+      </div>
       <button @click="drawCanvas">calculate</button>
-      <button @click="testCanvas">test</button>
-      <!-- <p v-if="doubleValues">Doppelte Werte: {{doubleValues}}</p> -->
-      <!-- <p>Anzahl: {{list.length}}</p> -->
     </div>
-    <canvas ref="calcCanvas" width="2000" height="2000" />
-    <!-- <p v-for="(entry, index) in list" :key="index">X: {{entry.zX}} Y: {{entry.zY}}</p> -->
+    <canvas ref="calcCanvas" width="2560" height="2560" />
   </div>
 </template>
 
@@ -26,19 +32,26 @@ export default {
       zY: 0,
       list: [],
       doubleValues: null,
-      // coords: {
-      //   minX: -2.5,
-      //   maxX: 1,
-      //   minY: -1.2,
-      //   maxY: 1.2
-      // },
+      iterations: 10,
       coords: {
-        minX: -1.5,
-        maxX: -0.5,
-        minY: -0.5,
-        maxY: 0.5
+        minX: -2.5,
+        maxX: 1,
+        minY: -1.2,
+        maxY: 1.2
       }
+      // coords: {
+      //   minX: -1.5,
+      //   maxX: -0.5,
+      //   minY: -0.5,
+      //   maxY: 0.5
+      // }
     }
+  },
+  mounted() {
+    window.addEventListener('resize', this.resize)
+    const canvas = this.$refs.calcCanvas
+    canvas.width = window.innerWidth - 15
+    canvas.height = window.innerHeight - 15
   },
   methods: {
     // getPointsFromCoordinates(coordX, coordY) {
@@ -56,7 +69,11 @@ export default {
 
     //   return { pointX, pointY }
     // },
-
+    resize() {
+      const canvas = this.$refs.calcCanvas
+      canvas.width = window.innerWidth - 15
+      canvas.height = window.innerHeight - 15
+    },
     getCoordinatesFromPoints(pointX, pointY) {
       const canvasWidth = this.$refs.calcCanvas.width
       const xCoordsWidth = this.coords.maxX - this.coords.minX
@@ -89,7 +106,7 @@ export default {
         for (let pointY = 0; pointY <= canvasHeight; pointY++) {
           const { coordX, coordY } = this.getCoordinatesFromPoints(pointX, pointY)
 
-          const color = this.calculatePointColor(coordX, coordY, 30)
+          const color = this.calculatePointColor(coordX, coordY, this.iterations)
 
           canvasContext.fillStyle = color
           canvasContext.fillRect(pointX, pointY, 1, 1)
@@ -159,6 +176,12 @@ body {
     color: #fff;
     padding: 10px;
 
+    .cutout {
+      display: flex;
+      flex-direction: row;
+      width: 100px;
+    }
+
     * {
       color: #fff;
     }
@@ -169,6 +192,7 @@ body {
       margin: 0 10px 0 0;
       padding: 3px;
       border-radius: 5px;
+      width: 100px;
     }
   }
 
