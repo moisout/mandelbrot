@@ -1,9 +1,9 @@
 <template>
   <div id="app">
-    <div class="header">
+    <div class="sidebar">
       <h1>Mandelbrot</h1>
       <div class="cutout">
-        <label for="iterations">Iterationen</label>
+        <label for="iterations">Iterations</label>
         <input id="iterations" type="text" v-model="iterations" />
         <label for="iterations">Maximum X</label>
         <input id="iterations" type="text" v-model="coords.maxX" />
@@ -14,12 +14,13 @@
         <label for="iterations">Minimum Y</label>
         <input id="iterations" type="text" v-model="coords.minY" />
 
-        <label for="iterations">Höhe</label>
+        <label for="iterations">Height</label>
         <input id="iterations" type="text" v-model="canvasHeight" />
-        <label for="iterations">Breite</label>
+        <label for="iterations">Width</label>
         <input id="iterations" type="text" v-model="canvasWidth" />
       </div>
-      <button @click="drawCanvas">calculate</button>
+      <button @click="drawCanvas" v-if="!calculating">Calculate</button>
+      <span v-if="calculating">Calculating...</span>
     </div>
     <canvas ref="calcCanvas" :width="canvasWidth" :height="canvasHeight" />
   </div>
@@ -45,7 +46,8 @@ export default {
         maxY: 1.2
       },
       canvasWidth: 1000,
-      canvasHeight: 1000
+      canvasHeight: 1000,
+      calculating: false
       // coords: {
       //   minX: -1.5,
       //   maxX: -0.5,
@@ -109,6 +111,7 @@ export default {
     },
 
     drawCanvas() {
+      this.calculating = true
       const canvas = this.$refs.calcCanvas
       const canvasHeight = canvas.height
       const canvasWidth = canvas.width
@@ -123,6 +126,7 @@ export default {
           canvasContext.fillRect(pointX, pointY, 1, 1)
         }
       }
+      this.calculating = false
     },
 
     calculatePointColor(c1, c2, iterations) {
@@ -173,37 +177,54 @@ body {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+  color: #fff;
   display: flex;
   height: 100%;
   width: 100%;
 
-  .header {
+  .sidebar {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    background-color: #1e1e1eca;
+    height: 100%;
+    background-color: #1e1e1e;
     color: #fff;
-    padding: 10px;
+    padding: 10px 20px 0 20px;
+    box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
+    width: 180px;
 
     .cutout {
       display: flex;
-      flex-direction: row;
-      width: 100px;
+      flex-direction: column;
+      width: 100%;
     }
 
-    * {
-      color: #fff;
-    }
     input,
     button {
       background-color: transparent;
-      border: solid 1px #fff;
-      margin: 0 10px 0 0;
-      padding: 3px;
+      margin: 0 0 10px 0;
+      padding: 5px 0;
+      color: #fff;
+    }
+
+    button {
+      border: none;
+      background-color: #474747;
       border-radius: 5px;
-      width: 100px;
+      margin: 10px 0;
+      width: 100%;
+      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+      &:hover {
+        cursor: pointer;
+        transform: scale(1.1);
+      }
+    }
+
+    input {
+      width: 100%;
+      border: none;
+      border-bottom: solid 2px #fff;
     }
   }
 
