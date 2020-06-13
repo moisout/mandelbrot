@@ -2,20 +2,21 @@
   <div id="app">
     <div class="header">
       <h1>Mandelbrot</h1>
-      <input type="text" name id v-model="c1" />
-      <input type="text" name id v-model="c2" />
-      <button @click="calculate">calculate</button>
-      <p v-if="doubleValues">Doppelte Werte: {{doubleValues}}</p>
-      <p>Anzahl: {{list.length}}</p>
+      <!-- <input type="text" name id v-model="c1" /> -->
+      <!-- <input type="text" name id v-model="c2" /> -->
+      <button @click="drawCanvas">calculate</button>
+      <button @click="testCanvas">test</button>
+      <!-- <p v-if="doubleValues">Doppelte Werte: {{doubleValues}}</p> -->
+      <!-- <p>Anzahl: {{list.length}}</p> -->
     </div>
-    <canvas ref="calcCanvas" width="100" height="100" />
+    <canvas ref="calcCanvas" width="2000" height="2000" />
     <!-- <p v-for="(entry, index) in list" :key="index">X: {{entry.zX}} Y: {{entry.zY}}</p> -->
   </div>
 </template>
 
 <script>
 export default {
-  name: "App",
+  name: 'App',
   components: {},
   data() {
     return {
@@ -25,76 +26,111 @@ export default {
       zY: 0,
       list: [],
       doubleValues: null,
+      // coords: {
+      //   minX: -2.5,
+      //   maxX: 1,
+      //   minY: -1.2,
+      //   maxY: 1.2
+      // },
       coords: {
-        minX: -2.5,
-        maxX: 1,
-        minY: -1.5,
-        maxY: 1.5
+        minX: -1.5,
+        maxX: -0.5,
+        minY: -0.5,
+        maxY: 0.5
       }
-    };
+    }
   },
   methods: {
-    getPointFromCoordinate(coordX, coordY) {
-      const canvasWidth = this.refs.calcCanvas.width;
-      const xCoordsWidth = this.coords.maxX - this.coords.minX;
+    // getPointsFromCoordinates(coordX, coordY) {
+    //   const canvasWidth = this.$refs.calcCanvas.width
+    //   const xCoordsWidth = this.coords.maxX - this.coords.minX
 
-      const canvasHeight = this.refs.calcCanvas.height;
-      const yCoordsHeight = this.coords.maxY - this.coords.minY;
+    //   const canvasHeight = this.$refs.calcCanvas.height
+    //   const yCoordsHeight = this.coords.maxY - this.coords.minY
 
-      const pointX =
-        (canvasWidth / xCoordsWidth) * Math.abs(this.coords.minX - coordX);
+    //   const pointX =
+    //     (canvasWidth / xCoordsWidth) * Math.abs(this.coords.minX - coordX)
 
-      const pointY =
-        (canvasHeight / yCoordsHeight) * Math.abs(this.coords.maxY - coordY);
+    //   const pointY =
+    //     (canvasHeight / yCoordsHeight) * Math.abs(this.coords.maxY - coordY)
 
-      return { pointX, pointY };
+    //   return { pointX, pointY }
+    // },
+
+    getCoordinatesFromPoints(pointX, pointY) {
+      const canvasWidth = this.$refs.calcCanvas.width
+      const xCoordsWidth = this.coords.maxX - this.coords.minX
+
+      const canvasHeight = this.$refs.calcCanvas.height
+      const yCoordsHeight = this.coords.maxY - this.coords.minY
+
+      const coordX = (xCoordsWidth / canvasWidth) * pointX + this.coords.minX
+
+      const coordY = this.coords.maxY - ((yCoordsHeight / canvasHeight) * pointY)
+
+      return { coordX, coordY }
     },
-    getCoordinateFromPoint(pointX, pointY) {
-      const canvasWidth = this.refs.calcCanvas.width;
-      const xCoordsWidth = this.coords.maxX - this.coords.minX;
 
-      const canvasHeight = this.refs.calcCanvas.height;
-      const yCoordsHeight = this.coords.maxY - this.coords.minY;
-
-      const coordX = (xCoordsWidth / canvasWidth) * pointX + this.coords.minX;
-
-      const coordY = (yCoordsHeight / canvasHeight) * pointY + this.coords.maxY;
-
-      return { coordX, coordY };
+    testCanvas() {
+      const canvas = this.$refs.calcCanvas
+      const canvasContext = canvas.getContext('2d')
+      canvasContext.fillStyle = 'rgba(0,0,0,1)'
+      canvasContext.fillRect(5, 5, 1, 1)
+      canvasContext.fillRect(6, 5, 1, 1)
+      canvasContext.fillRect(7, 5, 1, 1)
     },
 
-    async calculate() {
-      this.list = [];
-      this.zX = 0;
-      this.zY = 0;
-      this.c1 = parseFloat(this.c1);
-      this.c2 = parseFloat(this.c2);
+    drawCanvas() {
+      const canvas = this.$refs.calcCanvas
+      const canvasHeight = canvas.height
+      const canvasWidth = canvas.width
+      const canvasContext = canvas.getContext('2d')
+      for (let pointX = 0; pointX <= canvasWidth; pointX++) {
+        for (let pointY = 0; pointY <= canvasHeight; pointY++) {
+          const { coordX, coordY } = this.getCoordinatesFromPoints(pointX, pointY)
 
-      let duplicationArray = [];
+          const color = this.calculatePointColor(coordX, coordY, 30)
 
-      await setTimeout(() => {
-        for (
-          let index = 0;
-          index < 1000 && this.zX <= 2 && this.zY <= 2;
-          index++
-        ) {
-          this.zX = this.zX * this.zX - this.zY * this.zY + this.c1;
-          this.zY = 2 * this.zX * this.zY + this.c2;
-          this.list.push({ zX: this.zX, zY: this.zY });
-
-          if (
-            duplicationArray.length > 0 &&
-            duplicationArray.find(e => e.zX === this.zX && e.zY === this.zY)
-          ) {
-            this.doubleValues = { zX: this.zX, zY: this.zY };
-            break;
-          }
-          duplicationArray.push({ zX: this.zX, zY: this.zY });
+          canvasContext.fillStyle = color
+          canvasContext.fillRect(pointX, pointY, 1, 1)
         }
-      }, 100);
+      }
+    },
+
+    calculatePointColor(c1, c2, iterations) {
+      let zX = 0
+      let zY = 0
+
+      const duplicationArray = []
+
+      let hasDuplication = false
+
+      for (
+        let index = 0;
+        index < iterations && Math.abs(zX) <= 2 && Math.abs(zY) <= 2;
+        index++
+      ) {
+        const oldZX = zX
+        zX = zX * zX - zY * zY + c1
+        zY = 2 * oldZX * zY + c2
+
+        if (
+          duplicationArray.length > 0 &&
+          duplicationArray.find(e => e.zX === zX && e.zY === zY)
+        ) {
+          hasDuplication = true
+          break
+        }
+        duplicationArray.push({ zX: this.zX, zY: this.zY })
+      }
+
+      if (hasDuplication || (Math.abs(zX) <= 2 && Math.abs(zY) <= 2)) {
+        return 'rgba(0,0,0,1)'
+      }
+      return 'rgba(255,255,255,1)'
     }
   }
-};
+}
 </script>
 
 <style lang="scss">
@@ -137,9 +173,8 @@ body {
   }
 
   canvas {
-    border: 1px solid #000;
+    border: 2px solid #000;
     margin: auto;
-    transform: scale(4);
   }
 }
 </style>

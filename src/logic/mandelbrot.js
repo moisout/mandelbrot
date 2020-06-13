@@ -1,5 +1,5 @@
 export default {
-  calculate(c1, c2) {
-    
+  calculate (c1, c2) {
+
   }
 }
