@@ -3,36 +3,48 @@
     <h1>Mandelbrot</h1>
     <input type="number" name id v-model="c1" />
     <input type="number" name id v-model="c2" />
-
-    <p>{{result}}</p>
+    <button @click="calculate">calculate</button>
+    <p v-for="(entry, index) in list" :key="index">X: {{entry.zX}} Y: {{entry.zY}}</p>
   </div>
 </template>
 
 <script>
-import Mandelbrot from '@/logic/mandelbrot'
+import Mandelbrot from "@/logic/mandelbrot";
 
 export default {
-  name: 'App',
-  components: {
-  },
+  name: "App",
+  components: {},
   data() {
     return {
       c1: 0,
       c2: 0,
       zX: 0,
-      zY: 0
-    }
+      zY: 0,
+      list: []
+    };
   },
   methods: {
-    calculate(c1, c2) {
+    calculate() {
+      this.list = [];
+      this.zX = 0;
+      this.zY = 0;
+      for (
+        let index = 0;
+        index < 100 && this.zX <= 2 && this.zY <= 2;
+        index++
+      ) {
+        this.zX = this.zX * this.zX - this.zY * this.zY + this.c1;
+        this.zY = 2 * this.zX * this.zY + this.c2;
+        this.list.push({ zX: this.zX, zY: this.zY });
+      }
     }
   },
   computed: {
     result() {
-      return this.calculate(c1, c2)
+      return this.calculate(c1, c2);
     }
   }
-}
+};
 </script>
 
 <style lang="scss">
