@@ -1,8 +1,8 @@
 <template>
   <div id="app">
     <h1>Mandelbrot</h1>
-    <input type="number" name id v-model="c1" />
-    <input type="number" name id v-model="c2" />
+    <input type="text" name id v-model="c1" />
+    <input type="text" name id v-model="c2" />
     <button @click="calculate">calculate</button>
     <p>Anzahl: {{list.length}}</p> 
     <p v-for="(entry, index) in list" :key="index">X: {{entry.zX}} Y: {{entry.zY}}</p>
