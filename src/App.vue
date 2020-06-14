@@ -19,14 +19,19 @@
         <label for="iterations">Width</label>
         <input id="iterations" type="text" v-model="canvasWidth" />
       </div>
+      <label for="use-server">Use server</label>
+      <input type="checkbox" id="use-server" v-model="useServer" />
       <button @click="drawCanvas" v-if="!calculating">Calculate</button>
       <span v-if="calculating">Calculating...</span>
     </div>
+    <img :src="serverImg" v-if="serverImg" />
     <canvas ref="calcCanvas" :width="canvasWidth" :height="canvasHeight" />
   </div>
 </template>
 
 <script>
+import Axios from 'axios'
+
 export default {
   name: 'App',
   components: {},
@@ -47,7 +52,9 @@ export default {
       },
       canvasWidth: 1000,
       canvasHeight: 1000,
-      calculating: false
+      calculating: false,
+      useServer: false,
+      serverImg: null
       // coords: {
       //   minX: -1.5,
       //   maxX: -0.5,
@@ -112,18 +119,33 @@ export default {
 
     drawCanvas() {
       this.calculating = true
-      const canvas = this.$refs.calcCanvas
-      const canvasHeight = canvas.height
-      const canvasWidth = canvas.width
-      const canvasContext = canvas.getContext('2d')
-      for (let pointX = 0; pointX <= canvasWidth; pointX++) {
-        for (let pointY = 0; pointY <= canvasHeight; pointY++) {
-          const { coordX, coordY } = this.getCoordinatesFromPoints(pointX, pointY)
+      this.serverImg = null
+      if (this.useServer) {
+        Axios.post('http://localhost:3030/set', {
+          width: this.canvasWidth,
+          height: this.canvasHeight,
+          iterations: this.iterations,
+          maxX: this.coords.maxX,
+          minX: this.coords.minX,
+          maxY: this.coords.maxY,
+          minY: this.coords.minY
+        }).then(result => {
+          this.serverImg = result.data
+        })
+      } else {
+        const canvas = this.$refs.calcCanvas
+        const canvasHeight = canvas.height
+        const canvasWidth = canvas.width
+        const canvasContext = canvas.getContext('2d')
+        for (let pointX = 0; pointX <= canvasWidth; pointX++) {
+          for (let pointY = 0; pointY <= canvasHeight; pointY++) {
+            const { coordX, coordY } = this.getCoordinatesFromPoints(pointX, pointY)
 
-          const color = this.calculatePointColor(coordX, coordY, this.iterations)
+            const color = this.calculatePointColor(coordX, coordY, this.iterations)
 
-          canvasContext.fillStyle = color
-          canvasContext.fillRect(pointX, pointY, 1, 1)
+            canvasContext.fillStyle = color
+            canvasContext.fillRect(pointX, pointY, 1, 1)
+          }
         }
       }
       this.calculating = false
@@ -153,7 +175,7 @@ export default {
           hasDuplication = true
           break
         }
-        duplicationArray.push({ zX: this.zX, zY: this.zY })
+        duplicationArray.push({ zX: zX, zY: zY })
       }
 
       if (hasDuplication || (Math.abs(zX) <= 2 && Math.abs(zY) <= 2)) {
@@ -228,7 +250,7 @@ body {
     }
   }
 
-  canvas {
+  canvas, img {
     border: 2px solid #000;
     margin: auto;
   }
