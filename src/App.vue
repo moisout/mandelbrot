@@ -65,8 +65,8 @@ export default {
   },
   mounted() {
     // window.addEventListener('resize', this.resize)
-    this.canvasWidth = window.innerWidth - 15
-    this.canvasHeight = window.innerHeight - 15
+    // this.canvasWidth = window.innerWidth - 15
+    // this.canvasHeight = window.innerHeight - 15
   },
   methods: {
     // getPointsFromCoordinates(coordX, coordY) {
@@ -125,23 +125,35 @@ export default {
       const canvasHeight = canvas.height
       const canvasWidth = canvas.width
       const canvasContext = canvas.getContext('2d')
+
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight)
       let timer = 0
       const interval = setInterval(() => {
         const pointY = timer
+        let cancelBecauseMirror = false
         for (let pointX = 0; pointX <= canvasWidth; pointX++) {
           const { coordX, coordY } = this.getCoordinatesFromPoints(pointX, pointY)
+          if (Math.abs(this.coords.maxY) === Math.abs(this.coords.minY) && (canvasHeight % 2 === 0) && coordY === 0) {
+            const color = this.calculatePointColor(coordX, coordY, this.iterations)
 
-          const color = this.calculatePointColor(coordX, coordY, this.iterations)
+            if (color) {
+              canvasContext.fillStyle = color
+              canvasContext.fillRect(pointX, pointY, 1, 1)
+            }
+            cancelBecauseMirror = true
+            break
+          } else {
+            const color = this.calculatePointColor(coordX, coordY, this.iterations)
 
-          if (color) {
-            canvasContext.fillStyle = color
-            canvasContext.fillRect(pointX, pointY, 1, 1)
+            if (color) {
+              canvasContext.fillStyle = color
+              canvasContext.fillRect(pointX, pointY, 1, 1)
+            }
           }
         }
         this.progress = Math.ceil(100 / canvasHeight * timer)
         timer++
-        if (timer >= canvasHeight) {
+        if (timer >= canvasHeight || cancelBecauseMirror === true) {
           clearInterval(interval)
           this.timeSpent = performance.now() - time0
         }
