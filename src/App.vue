@@ -187,6 +187,51 @@ export default {
       imageObject.src = canvas.toDataURL()
     },
 
+    // canvasSizeInPowerOf2() {
+    //   const canvas = this.$refs.calcCanvas
+    //   let canvasHeightModulo = canvas.height
+    //   let canvasWidthModulo = canvas.width
+    //   const canvasHeightInPowerOf2 = []
+    //   let canvasWidthInPowerOf2 = []
+
+    //   while (canvasHeightModulo !== 0) {
+    //     const modulo = canvasHeightModulo % 2
+    //     if (modulo !== 0) {
+    //       canvasHeightModulo -= modulo
+    //     }
+    //     canvasHeightModulo /= 2
+    //     canvasHeightInPowerOf2.push(modulo)
+    //   }
+    //   if (canvasHeightModulo === canvasWidthModulo) {
+    //     canvasWidthInPowerOf2 = canvasHeightInPowerOf2.slice()
+    //   } else {
+    //     while (canvasWidthModulo !== 0) {
+    //       const modulo = canvasWidthModulo % 2
+    //       if (modulo !== 0) {
+    //         canvasWidthModulo -= modulo
+    //       }
+    //       canvasWidthModulo /= 2
+    //       canvasWidthInPowerOf2.push(modulo)
+    //     }
+    //   }
+    //   return { canvasHeightInPowerOf2, canvasWidthInPowerOf2 }
+    // },
+
+    // drawCanvasOptimized() {
+    //   const { canvasHeightInPowerOf2, canvasWidthInPowerOf2 } = this.canvasSizeInPowerOf2()
+    //   const lengthCanvasHeightInPowerOf2 = canvasHeightInPowerOf2
+    //   const lengthCanvasWidthInPowerOf2 = canvasWidthInPowerOf2
+
+    //   for (let index = lengthCanvasHeightInPowerOf2 - 1; index >= 0; index--) {
+    //     if (canvasHeightInPowerOf2 ) {
+
+    //     }
+    //     else {
+
+    //     }
+    //   }
+    // },
+
     calculatePointColor(c1, c2, iterations) {
       let zX = 0
       let zY = 0
