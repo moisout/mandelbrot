@@ -22,6 +22,8 @@
       <label for="use-server">Use server</label>
       <button @click="drawCanvas" v-if="!calculating">Calculate</button>
       <span v-if="calculating">Calculating...</span>
+      <p>{{progress}} %</p>
+      <p>{{timeSpent}} ms</p>
     </div>
     <canvas ref="calcCanvas" :width="canvasWidth" :height="canvasHeight" />
   </div>
@@ -50,7 +52,9 @@ export default {
       canvasHeight: 1000,
       calculating: false,
       useServer: false,
-      serverImg: null
+      serverImg: null,
+      timeSpent: 0,
+      progress: 0
       // coords: {
       //   minX: -1.5,
       //   maxX: -0.5,
@@ -114,12 +118,14 @@ export default {
     },
 
     drawCanvas() {
+      const time0 = performance.now()
       this.calculating = true
 
       const canvas = this.$refs.calcCanvas
       const canvasHeight = canvas.height
       const canvasWidth = canvas.width
       const canvasContext = canvas.getContext('2d')
+      canvasContext.clearRect(0, 0, canvasWidth, canvasHeight)
       let timer = 0
       const interval = setInterval(() => {
         const pointY = timer
@@ -128,12 +134,16 @@ export default {
 
           const color = this.calculatePointColor(coordX, coordY, this.iterations)
 
-          canvasContext.fillStyle = color
-          canvasContext.fillRect(pointX, pointY, 1, 1)
+          if (color) {
+            canvasContext.fillStyle = color
+            canvasContext.fillRect(pointX, pointY, 1, 1)
+          }
         }
+        this.progress = Math.ceil(100 / canvasHeight * timer)
         timer++
         if (timer >= canvasHeight) {
           clearInterval(interval)
+          this.timeSpent = performance.now() - time0
         }
       }, 0)
       this.calculating = false
@@ -169,7 +179,7 @@ export default {
       if (hasDuplication || (Math.abs(zX) <= 2 && Math.abs(zY) <= 2)) {
         return 'rgba(0,0,0,1)'
       }
-      return 'rgba(255,255,255,1)'
+      return false
     }
   }
 }
