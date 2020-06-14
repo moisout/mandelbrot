@@ -160,6 +160,7 @@ export default {
         }
         if (cancelBecauseMirror) {
           this.mirrorHalfYCanvas()
+          this.progress = 100
         }
       }, 0)
       this.calculating = false
