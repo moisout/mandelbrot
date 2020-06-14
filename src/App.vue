@@ -42,10 +42,10 @@ export default {
       doubleValues: null,
       iterations: 10,
       coords: {
-        minX: -2,
         maxX: 0.5,
-        minY: -1.25,
-        maxY: 1.25
+        minX: -2,
+        maxY: 1.25,
+        minY: -1.25
       },
       canvasWidth: 1000,
       canvasHeight: 1000,
@@ -103,11 +103,6 @@ export default {
     },
 
     testCanvas() {
-      this.coords.minX = parseFloat(this.coords.minX)
-      this.coords.maxX = parseFloat(this.coords.maxX)
-      this.coords.minY = parseFloat(this.coords.minY)
-      this.coords.maxY = parseFloat(this.coords.maxY)
-
       const canvas = this.$refs.calcCanvas
       const canvasContext = canvas.getContext('2d')
       canvasContext.fillStyle = 'rgba(0,0,0,1)'
@@ -117,6 +112,11 @@ export default {
     },
 
     drawCanvas() {
+      this.coords.minX = parseFloat(this.coords.minX)
+      this.coords.maxX = parseFloat(this.coords.maxX)
+      this.coords.minY = parseFloat(this.coords.minY)
+      this.coords.maxY = parseFloat(this.coords.maxY)
+
       const time0 = performance.now()
       this.calculating = true
 
@@ -125,7 +125,7 @@ export default {
       const canvasWidth = canvas.width
       const canvasContext = canvas.getContext('2d')
 
-      canvasContext.translate(0, 0)
+      canvasContext.setTransform(1, 0, 0, 1, 0, 0)
       canvasContext.scale(1, 1)
 
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight)
