@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <div class="sidebar">
+    <div class="sidebar" :class="{ visible: sidebar }">
       <h1>Mandelbrot</h1>
       <div class="cutout">
         <label for="iterations">Iterations</label>
@@ -18,17 +18,34 @@
         <input id="iterations" type="text" v-model="canvasHeight" />
         <label for="iterations">Width</label>
         <input id="iterations" type="text" v-model="canvasWidth" />
+
+        <input
+          class="color-hidden"
+          type="color"
+          name="startColor"
+          id="start-color"
+          v-model="startColor"
+        />
+        <label class="color" for="start-color" :style="{'background-color': startColor}"></label>
+        <input class="color-hidden" type="color" name="endColor" id="end-color" v-model="endColor" />
+        <label class="color" for="end-color" :style="{'background-color': endColor}"></label>
       </div>
       <button @click="drawCanvas" v-if="!calculating">Calculate</button>
       <span v-if="calculating">Calculating...</span>
       <p>Progress: {{progress}} %</p>
       <p>Time spent: {{timeSpent}} ms</p>
     </div>
+    <button class="toggle-drawer" :class="{ outside: sidebar }" @click="sidebar = !sidebar">
+      <span>«</span>
+    </button>
     <canvas ref="calcCanvas" :width="canvasWidth" :height="canvasHeight" />
   </div>
 </template>
 
 <script>
+import { Mandelbrot } from '@/logic/mandelbrot'
+import { Common } from '@/logic/common'
+
 export default {
   name: 'App',
   components: {},
@@ -54,7 +71,10 @@ export default {
       serverImg: null,
       timeSpent: 0,
       progress: 0,
-      colorPalette: []
+      colorPalette: [],
+      startColor: '#e6ff00',
+      endColor: '#ff0600',
+      sidebar: true
       // coords: {
       //   minX: -1.5,
       //   maxX: -0.5,
@@ -89,28 +109,6 @@ export default {
       canvas.width = window.innerWidth - 15
       canvas.height = window.innerHeight - 15
     },
-    getCoordinatesFromPoints(pointX, pointY) {
-      const canvasWidth = this.$refs.calcCanvas.width
-      const xCoordsWidth = this.coords.maxX - this.coords.minX
-
-      const canvasHeight = this.$refs.calcCanvas.height
-      const yCoordsHeight = this.coords.maxY - this.coords.minY
-
-      const coordX = (xCoordsWidth / canvasWidth) * pointX + this.coords.minX
-
-      const coordY = this.coords.maxY - ((yCoordsHeight / canvasHeight) * pointY)
-
-      return { coordX, coordY }
-    },
-
-    testCanvas() {
-      const canvas = this.$refs.calcCanvas
-      const canvasContext = canvas.getContext('2d')
-      canvasContext.fillStyle = 'rgba(0,0,0,1)'
-      canvasContext.fillRect(5, 5, 1, 1)
-      canvasContext.fillRect(6, 5, 1, 1)
-      canvasContext.fillRect(7, 5, 1, 1)
-    },
 
     drawCanvas() {
       this.coords.minX = parseFloat(this.coords.minX)
@@ -126,7 +124,12 @@ export default {
       const canvasWidth = canvas.width
       const canvasContext = canvas.getContext('2d')
 
-      this.generateColorPalette({ r: 7, g: 0, b: 226 }, { r: 193, g: 5, b: 24 })
+      const maxX = this.coords.maxX
+      const minX = this.coords.minX
+      const maxY = this.coords.maxY
+      const minY = this.coords.minY
+
+      this.colorPalette = Common.generateColorPalette(this.startColor, this.endColor, this.iterations)
 
       canvasContext.setTransform(1, 0, 0, 1, 0, 0)
       canvasContext.scale(1, 1)
@@ -137,9 +140,17 @@ export default {
         const pointY = timer
         let cancelBecauseMirror = false
         for (let pointX = 0; pointX <= canvasWidth; pointX++) {
-          const { coordX, coordY } = this.getCoordinatesFromPoints(pointX, pointY)
-          if (Math.abs(this.coords.maxY) === Math.abs(this.coords.minY) && (canvasHeight % 2 === 0) && coordY === 0) {
-            const color = this.calculatePointColor(coordX, coordY, this.iterations)
+          const { coordX, coordY } = Mandelbrot.getCoordinatesFromPoints(
+            { pointX, pointY },
+            { canvasWidth, canvasHeight },
+            { maxX, minX, maxY, minY }
+          )
+
+          if (
+            Math.abs(this.coords.maxY) === Math.abs(this.coords.minY) &&
+            (canvasHeight % 2 === 0) && coordY === 0
+          ) {
+            const color = Mandelbrot.calculatePointColor(coordX, coordY, this.iterations, this.colorPalette)
 
             if (color) {
               canvasContext.fillStyle = color
@@ -147,7 +158,7 @@ export default {
             }
             cancelBecauseMirror = true
           } else {
-            const color = this.calculatePointColor(coordX, coordY, this.iterations)
+            const color = Mandelbrot.calculatePointColor(coordX, coordY, this.iterations, this.colorPalette)
 
             if (color) {
               canvasContext.fillStyle = color
@@ -160,13 +171,13 @@ export default {
         if (timer >= canvasHeight || cancelBecauseMirror === true) {
           clearInterval(interval)
           this.timeSpent = performance.now() - time0
+          this.calculating = false
         }
         if (cancelBecauseMirror) {
           this.mirrorHalfYCanvas()
           this.progress = 100
         }
       }, 0)
-      this.calculating = false
     },
 
     mirrorHalfYCanvas() {
@@ -188,7 +199,7 @@ export default {
         canvasContext.drawImage(imageObject, (canvasWidth / 2) * -1, ((canvasHeight / 2) * -1) - 1)
       }
       imageObject.src = canvas.toDataURL()
-    },
+    }
 
     // canvasSizeInPowerOf2() {
     //   const canvas = this.$refs.calcCanvas
@@ -234,65 +245,6 @@ export default {
     //     }
     //   }
     // },
-
-    calculatePointColor(c1, c2, iterations) {
-      let zX = 0
-      let zY = 0
-
-      const duplicationArray = []
-
-      let hasDuplication = false
-
-      for (
-        let index = 0;
-        index < iterations && Math.abs(zX) <= 2 && Math.abs(zY) <= 2;
-        index++
-      ) {
-        const oldZX = zX
-        zX = zX * zX - zY * zY + c1
-        zY = 2 * oldZX * zY + c2
-
-        if (
-          duplicationArray.length > 0 &&
-          duplicationArray.find(e => e.zX === zX && e.zY === zY)
-        ) {
-          hasDuplication = true
-          break
-        }
-        duplicationArray.push({ zX: zX, zY: zY })
-      }
-
-      if (hasDuplication || (Math.abs(zX) <= 2 && Math.abs(zY) <= 2)) {
-        return 'rgba(0,0,0,1)'
-      }
-      return false
-    },
-
-    generateColorPalette(startColor, endColor) {
-      // const colorStep = {
-      //   r: this.iterations / (Math.abs(startColor.r) - Math.abs(endColor.r)),
-      //   g: this.iterations / (Math.abs(startColor.g) - Math.abs(endColor.g)),
-      //   b: this.iterations / (Math.abs(startColor.b) - Math.abs(endColor.b))
-      // }
-
-      for (let i = 0; i < this.iterations; i++) {
-        // const color = new this.Color()
-      }
-
-      // console.log(colorStep)
-      // for (
-      //   let indexObj = { r: startColor.r, g: startColor.g, b: startColor.b, i: 0 };
-      //   indexObj.i < this.iterations;
-      //   indexObj.r += colorStep.r, indexObj.g += colorStep.g, indexObj.b += colorStep.b, indexObj.i++
-      // ) {
-      //   this.colorPalette.push({ r: indexObj.r, g: indexObj.g, b: indexObj.b })
-      // }
-      // console.log(this.colorPalette)
-    },
-
-    Color(r, g, b) {
-      return { r: 0, g: 0, b: 0 }
-    }
   }
 }
 </script>
@@ -303,6 +255,7 @@ body {
   margin: 0;
   height: 100%;
   width: 100%;
+  background-color: #1e1e1e;
 }
 
 #app {
@@ -312,6 +265,7 @@ body {
   color: #fff;
   display: flex;
   height: 100%;
+  margin: 0;
   width: 100%;
 
   .sidebar {
@@ -319,11 +273,18 @@ body {
     top: 0;
     left: 0;
     height: 100%;
-    background-color: #1e1e1e;
     color: #fff;
     padding: 10px 20px 0 20px;
     box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22);
     width: 180px;
+    background-color: #1e1e1e96;
+    backdrop-filter: blur(20px);
+    transform: translateX(-240px);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+    &.visible {
+      transform: translateX(0);
+    }
 
     .cutout {
       display: flex;
@@ -337,6 +298,10 @@ body {
       margin: 0 0 10px 0;
       padding: 5px 0;
       color: #fff;
+
+      &::-moz-focus-inner {
+        border: 0;
+      }
     }
 
     button {
@@ -357,12 +322,58 @@ body {
       width: 100%;
       border: none;
       border-bottom: solid 2px #fff;
+
+      &.color-hidden {
+        display: none;
+      }
+    }
+
+    .color {
+      height: 30px;
+      border: none;
+      width: 100%;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+  }
+
+  .toggle-drawer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    transform: rotate(180deg);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    border: none;
+    background-color: #000000b7;
+    width: 50px;
+    height: 50px;
+    border-radius: 25px 0 0 25px;
+    margin: 0 0 30px 0;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+
+    &::-moz-focus-inner {
+      border: 0;
+    }
+
+    span {
+      display: block;
+      height: calc(100% - 10px);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    &.outside {
+      transform: rotate(0deg);
+      border-radius: 25px;
+      margin: 0 0 30px 30px;
     }
   }
 
   canvas,
   img {
-    border: 2px solid #000;
+    border: 2px solid #5f5f5f;
     margin: auto;
   }
 }
