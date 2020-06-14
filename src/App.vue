@@ -53,7 +53,8 @@ export default {
       useServer: false,
       serverImg: null,
       timeSpent: 0,
-      progress: 0
+      progress: 0,
+      colorPalette: []
       // coords: {
       //   minX: -1.5,
       //   maxX: -0.5,
@@ -124,6 +125,8 @@ export default {
       const canvasHeight = canvas.height
       const canvasWidth = canvas.width
       const canvasContext = canvas.getContext('2d')
+
+      this.generateColorPalette({ r: 7, g: 0, b: 226 }, { r: 193, g: 5, b: 24 })
 
       canvasContext.setTransform(1, 0, 0, 1, 0, 0)
       canvasContext.scale(1, 1)
@@ -218,6 +221,32 @@ export default {
         return 'rgba(0,0,0,1)'
       }
       return false
+    },
+
+    generateColorPalette(startColor, endColor) {
+      // const colorStep = {
+      //   r: this.iterations / (Math.abs(startColor.r) - Math.abs(endColor.r)),
+      //   g: this.iterations / (Math.abs(startColor.g) - Math.abs(endColor.g)),
+      //   b: this.iterations / (Math.abs(startColor.b) - Math.abs(endColor.b))
+      // }
+
+      for (let i = 0; i < this.iterations; i++) {
+        // const color = new this.Color()
+      }
+
+      // console.log(colorStep)
+      // for (
+      //   let indexObj = { r: startColor.r, g: startColor.g, b: startColor.b, i: 0 };
+      //   indexObj.i < this.iterations;
+      //   indexObj.r += colorStep.r, indexObj.g += colorStep.g, indexObj.b += colorStep.b, indexObj.i++
+      // ) {
+      //   this.colorPalette.push({ r: indexObj.r, g: indexObj.g, b: indexObj.b })
+      // }
+      // console.log(this.colorPalette)
+    },
+
+    Color(r, g, b) {
+      return { r: 0, g: 0, b: 0 }
     }
   }
 }
