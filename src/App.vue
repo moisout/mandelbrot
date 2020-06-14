@@ -19,11 +19,10 @@
         <label for="iterations">Width</label>
         <input id="iterations" type="text" v-model="canvasWidth" />
       </div>
-      <label for="use-server">Use server</label>
       <button @click="drawCanvas" v-if="!calculating">Calculate</button>
       <span v-if="calculating">Calculating...</span>
-      <p>{{progress}} %</p>
-      <p>{{timeSpent}} ms</p>
+      <p>Progress: {{progress}} %</p>
+      <p>Time spent: {{timeSpent}} ms</p>
     </div>
     <canvas ref="calcCanvas" :width="canvasWidth" :height="canvasHeight" />
   </div>
@@ -126,6 +125,9 @@ export default {
       const canvasWidth = canvas.width
       const canvasContext = canvas.getContext('2d')
 
+      canvasContext.translate(0, 0)
+      canvasContext.scale(1, 1)
+
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight)
       let timer = 0
       const interval = setInterval(() => {
@@ -141,7 +143,6 @@ export default {
               canvasContext.fillRect(pointX, pointY, 1, 1)
             }
             cancelBecauseMirror = true
-            break
           } else {
             const color = this.calculatePointColor(coordX, coordY, this.iterations)
 
@@ -157,8 +158,32 @@ export default {
           clearInterval(interval)
           this.timeSpent = performance.now() - time0
         }
+        if (cancelBecauseMirror) {
+          this.mirrorHalfYCanvas()
+        }
       }, 0)
       this.calculating = false
+    },
+
+    mirrorHalfYCanvas() {
+      const canvas = this.$refs.calcCanvas
+      const canvasHeight = canvas.height
+      const canvasWidth = canvas.width
+      const canvasContext = canvas.getContext('2d')
+
+      // for (let pointY = 0; pointY < canvasHeight / 2; pointY++) {
+      //   for (let pointX = 0; pointX < canvasWidth; pointX++) {
+      // const imgData = canvasContext.getImageData(0, 0, canvasWidth, canvasHeight / 2)
+
+      // const yCoordsHeight = this.coords.maxY - this.coords.minY
+
+      const imageObject = new Image()
+      imageObject.onload = () => {
+        canvasContext.translate(canvasWidth / 2, canvasHeight / 2)
+        canvasContext.scale(1, -1)
+        canvasContext.drawImage(imageObject, (canvasWidth / 2) * -1, ((canvasHeight / 2) * -1) - 1)
+      }
+      imageObject.src = canvas.toDataURL()
     },
 
     calculatePointColor(c1, c2, iterations) {
