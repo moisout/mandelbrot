@@ -45,10 +45,10 @@ export default {
       doubleValues: null,
       iterations: 10,
       coords: {
-        minX: -2.5,
-        maxX: 1,
-        minY: -1.2,
-        maxY: 1.2
+        minX: -2,
+        maxX: 0.5,
+        minY: -1.25,
+        maxY: 1.25
       },
       canvasWidth: 1000,
       canvasHeight: 1000,
