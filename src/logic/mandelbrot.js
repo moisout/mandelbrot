@@ -36,6 +36,20 @@ export const Mandelbrot = {
     return `rgba(${clrP[dupI].r},${clrP[dupI].g},${clrP[dupI].b},1)`
   },
 
+  getPointsFromCoordinates({ coordX, coordY }, { canvasWidth, canvasHeight }, { maxX, minX, maxY, minY }) {
+    const xCoordsWidth = maxX - minX
+
+    const yCoordsHeight = maxY - minY
+
+    const pointX =
+      (canvasWidth / xCoordsWidth) * Math.abs(minX - coordX)
+
+    const pointY =
+      (canvasHeight / yCoordsHeight) * Math.abs(maxY - coordY)
+
+    return { pointX, pointY }
+  },
+
   getCoordinatesFromPoints({ pointX, pointY }, { canvasWidth, canvasHeight }, { maxX, minX, maxY, minY }) {
     const xCoordsWidth = maxX - minX
 
@@ -45,6 +59,7 @@ export const Mandelbrot = {
 
     const coordY = maxY - ((yCoordsHeight / canvasHeight) * pointY)
 
+    // debugger
     return { coordX, coordY }
   }
 }

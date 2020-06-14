@@ -38,7 +38,23 @@
     <button class="toggle-drawer" :class="{ outside: sidebar }" @click="sidebar = !sidebar">
       <span>«</span>
     </button>
-    <canvas ref="calcCanvas" :width="canvasWidth" :height="canvasHeight" />
+    <canvas
+      @mousedown.prevent="onCanvasMouseDown"
+      @mousemove.prevent="onCanvasMouseMove"
+      @mouseup.prevent="onCanvasMouseUp"
+      @mouseleave.prevent="onCanvasMouseLeave"
+      ref="calcCanvas"
+      :width="canvasWidth"
+      :height="canvasHeight"
+    />
+    <div
+      class="selector"
+      :style="{
+        left: `${selector.x}px`,
+        top: `${selector.y}px`,
+        transform: `scale3d(${selector.width},${selector.height},1)`
+      }"
+    ></div>
   </div>
 </template>
 
@@ -57,15 +73,15 @@ export default {
       zY: 0,
       list: [],
       doubleValues: null,
-      iterations: 10,
+      iterations: 50,
       coords: {
         maxX: 0.5,
         minX: -2,
         maxY: 1.25,
         minY: -1.25
       },
-      canvasWidth: 1000,
-      canvasHeight: 1000,
+      canvasWidth: 800,
+      canvasHeight: 800,
       calculating: false,
       useServer: false,
       serverImg: null,
@@ -74,7 +90,14 @@ export default {
       colorPalette: [],
       startColor: '#e6ff00',
       endColor: '#ff0600',
-      sidebar: true
+      sidebar: true,
+      selector: {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        moving: false
+      }
       // coords: {
       //   minX: -1.5,
       //   maxX: -0.5,
@@ -89,21 +112,69 @@ export default {
     // this.canvasHeight = window.innerHeight - 15
   },
   methods: {
-    // getPointsFromCoordinates(coordX, coordY) {
-    //   const canvasWidth = this.$refs.calcCanvas.width
-    //   const xCoordsWidth = this.coords.maxX - this.coords.minX
+    onCanvasMouseDown(e) {
+      this.selector.x = e.x
+      this.selector.y = e.y
+      this.selector.width = 0
+      this.selector.height = 0
+      this.selector.moving = true
+    },
+    onCanvasMouseMove(e) {
+      if (this.selector.moving) {
+        this.selector.width = e.x - this.selector.x
+        this.selector.height = e.y - this.selector.y
+      }
+    },
+    onCanvasMouseUp(e) {
+      this.selector.moving = false
 
-    //   const canvasHeight = this.$refs.calcCanvas.height
-    //   const yCoordsHeight = this.coords.maxY - this.coords.minY
+      const bodyRect = document.body.getBoundingClientRect()
+      const canvas = this.$refs.calcCanvas
+      const elRect = canvas.getBoundingClientRect()
+      const offsetTop = elRect.top - bodyRect.top
+      const offsetLeft = elRect.left - bodyRect.left
+      let pointMaxX = this.selector.x - offsetLeft
+      let pointMaxY = this.selector.y - offsetTop
+      let pointMinX = this.selector.x - offsetLeft + this.selector.width
+      let pointMinY = this.selector.y - offsetTop + this.selector.height
 
-    //   const pointX =
-    //     (canvasWidth / xCoordsWidth) * Math.abs(this.coords.minX - coordX)
+      debugger
+      if (pointMaxX < pointMinX) {
+        const tempMin = pointMaxX
+        pointMaxX = pointMinX
+        pointMinX = tempMin
+        debugger
+      }
+      if (pointMaxY < pointMinY) {
+        const tempMin = pointMaxY
+        pointMaxY = pointMinY
+        pointMinY = tempMin
+        debugger
+      }
 
-    //   const pointY =
-    //     (canvasHeight / yCoordsHeight) * Math.abs(this.coords.maxY - coordY)
+      const maxCoords = Mandelbrot.getCoordinatesFromPoints(
+        { pointX: pointMaxX, pointY: pointMaxY },
+        { canvasWidth: canvas.width, canvasHeight: canvas.height },
+        { maxX: this.coords.maxX, minX: this.coords.minX, maxY: this.coords.maxY, minY: this.coords.minY }
+      )
+      const minCoords = Mandelbrot.getCoordinatesFromPoints(
+        { pointX: pointMinX, pointY: pointMinY },
+        { canvasWidth: canvas.width, canvasHeight: canvas.height },
+        { maxX: this.coords.maxX, minX: this.coords.minX, maxY: this.coords.maxY, minY: this.coords.minY }
+      )
 
-    //   return { pointX, pointY }
-    // },
+      this.coords.maxX = maxCoords.coordX
+      this.coords.maxY = maxCoords.coordY
+      this.coords.minY = minCoords.coordY
+      this.coords.minX = minCoords.coordX
+      this.drawCanvas()
+
+      this.selector.width = 0
+      this.selector.height = 0
+    },
+    onCanvasMouseLeave(e) {
+      this.selector.moving = false
+    },
     resize() {
       const canvas = this.$refs.calcCanvas
       canvas.width = window.innerWidth - 15
@@ -267,6 +338,17 @@ body {
   height: 100%;
   margin: 0;
   width: 100%;
+
+  .selector {
+    box-sizing: border-box;
+    background-color: #b3b3b3a1;
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    height: 1px;
+    width: 1px;
+    transform-origin: top left;
+  }
 
   .sidebar {
     position: fixed;
