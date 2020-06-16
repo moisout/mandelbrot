@@ -32,8 +32,11 @@
       </div>
       <button @click="drawCanvas" v-if="!calculating">Calculate</button>
       <span v-if="calculating">Calculating...</span>
+      <button v-if="calculating" @click="cancelDrawCanvas">Cancel</button>
       <p>Progress: {{progress}} %</p>
       <p>Time spent: {{timeSpent}} ms</p>
+      <label for="zoom"></label>
+      <input type="range" name="" id="zoom" v-model="canvasZoom" max="50" min="1" step="0.1">
     </div>
     <button class="toggle-drawer" :class="{ outside: sidebar }" @click="sidebar = !sidebar">
       <span>«</span>
@@ -46,6 +49,7 @@
       ref="calcCanvas"
       :width="canvasWidth"
       :height="canvasHeight"
+      :style="{transform: `scale(${canvasZoom})`}"
     />
     <div
       class="selector"
@@ -74,7 +78,7 @@ export default {
       zY: 0,
       list: [],
       doubleValues: null,
-      iterations: 50,
+      iterations: 30,
       coords: {
         maxX: 0.5,
         minX: -2,
@@ -83,6 +87,7 @@ export default {
       },
       canvasWidth: 800,
       canvasHeight: 800,
+      canvasZoom: 1,
       calculating: false,
       useServer: false,
       serverImg: null,
@@ -168,6 +173,9 @@ export default {
         { maxX: this.coords.maxX, minX: this.coords.minX, maxY: this.coords.maxY, minY: this.coords.minY }
       )
 
+      const aspect = this.selector.width / this.selector.height
+      this.canvasWidth = this.canvasHeight * aspect
+
       this.coords.maxX = maxCoords.coordX
       this.coords.maxY = maxCoords.coordY
       this.coords.minY = minCoords.coordY
@@ -196,8 +204,8 @@ export default {
       this.calculating = true
 
       const canvas = this.$refs.calcCanvas
-      const canvasHeight = canvas.height
-      const canvasWidth = canvas.width
+      const canvasHeight = this.canvasHeight
+      const canvasWidth = this.canvasWidth
       const canvasContext = canvas.getContext('2d')
 
       const maxX = this.coords.maxX
@@ -343,6 +351,7 @@ body {
   height: 100%;
   margin: 0;
   width: 100%;
+  overflow: hidden;
 
   .selector {
     box-sizing: border-box;
@@ -368,6 +377,7 @@ body {
     backdrop-filter: blur(20px);
     transform: translateX(-240px);
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 100;
 
     &.visible {
       transform: translateX(0);
@@ -458,10 +468,12 @@ body {
     }
   }
 
-  canvas,
-  img {
+  canvas{
     border: 2px solid #5f5f5f;
     margin: auto;
+    height: 100%;
+    box-sizing: border-box;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 }
 </style>
