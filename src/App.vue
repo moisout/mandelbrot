@@ -52,7 +52,8 @@
       :style="{
         left: `${selector.x}px`,
         top: `${selector.y}px`,
-        transform: `scale3d(${selector.width},${selector.height},1)`
+        width: `${selector.width}px`,
+        height: `${selector.height}px`
       }"
     ></div>
   </div>
@@ -65,7 +66,7 @@ import { Common } from '@/logic/common'
 export default {
   name: 'App',
   components: {},
-  data() {
+  data () {
     return {
       c1: 0,
       c2: 0,
@@ -92,6 +93,8 @@ export default {
       endColor: '#ff0600',
       sidebar: true,
       selector: {
+        originalX: 0,
+        originalY: 0,
         x: 0,
         y: 0,
         width: 0,
@@ -106,26 +109,42 @@ export default {
       // }
     }
   },
-  mounted() {
+  mounted () {
     // window.addEventListener('resize', this.resize)
     // this.canvasWidth = window.innerWidth - 15
     // this.canvasHeight = window.innerHeight - 15
   },
   methods: {
-    onCanvasMouseDown(e) {
+    onCanvasMouseDown (e) {
       this.selector.x = e.x
       this.selector.y = e.y
+      this.selector.originalX = e.x
+      this.selector.originalY = e.y
       this.selector.width = 0
       this.selector.height = 0
       this.selector.moving = true
     },
-    onCanvasMouseMove(e) {
+    onCanvasMouseMove (e) {
       if (this.selector.moving) {
-        this.selector.width = e.x - this.selector.x
-        this.selector.height = e.y - this.selector.y
+        const selectorWidth = e.x - this.selector.originalX
+        const selectorHeight = e.y - this.selector.originalY
+        if (selectorWidth < 0) {
+          this.selector.x = this.selector.originalX + selectorWidth
+          this.selector.width = Math.abs(selectorWidth)
+        } else {
+          this.selector.x = this.selector.originalX
+          this.selector.width = selectorWidth
+        }
+        if (selectorHeight < 0) {
+          this.selector.y = this.selector.originalY + selectorHeight
+          this.selector.height = Math.abs(selectorHeight)
+        } else {
+          this.selector.y = this.selector.originalY
+          this.selector.height = selectorHeight
+        }
       }
     },
-    onCanvasMouseUp(e) {
+    onCanvasMouseUp (e) {
       this.selector.moving = false
 
       const bodyRect = document.body.getBoundingClientRect()
@@ -133,24 +152,10 @@ export default {
       const elRect = canvas.getBoundingClientRect()
       const offsetTop = elRect.top - bodyRect.top
       const offsetLeft = elRect.left - bodyRect.left
-      let pointMaxX = this.selector.x - offsetLeft
-      let pointMaxY = this.selector.y - offsetTop
-      let pointMinX = this.selector.x - offsetLeft + this.selector.width
-      let pointMinY = this.selector.y - offsetTop + this.selector.height
-
-      debugger
-      if (pointMaxX < pointMinX) {
-        const tempMin = pointMaxX
-        pointMaxX = pointMinX
-        pointMinX = tempMin
-        debugger
-      }
-      if (pointMaxY < pointMinY) {
-        const tempMin = pointMaxY
-        pointMaxY = pointMinY
-        pointMinY = tempMin
-        debugger
-      }
+      const pointMaxX = this.selector.x - offsetLeft + this.selector.width
+      const pointMaxY = this.selector.y - offsetTop
+      const pointMinX = this.selector.x - offsetLeft
+      const pointMinY = this.selector.y - offsetTop + this.selector.height
 
       const maxCoords = Mandelbrot.getCoordinatesFromPoints(
         { pointX: pointMaxX, pointY: pointMaxY },
@@ -172,16 +177,16 @@ export default {
       this.selector.width = 0
       this.selector.height = 0
     },
-    onCanvasMouseLeave(e) {
+    onCanvasMouseLeave (e) {
       this.selector.moving = false
     },
-    resize() {
+    resize () {
       const canvas = this.$refs.calcCanvas
       canvas.width = window.innerWidth - 15
       canvas.height = window.innerHeight - 15
     },
 
-    drawCanvas() {
+    drawCanvas () {
       this.coords.minX = parseFloat(this.coords.minX)
       this.coords.maxX = parseFloat(this.coords.maxX)
       this.coords.minY = parseFloat(this.coords.minY)
@@ -251,7 +256,7 @@ export default {
       }, 0)
     },
 
-    mirrorHalfYCanvas() {
+    mirrorHalfYCanvas () {
       const canvas = this.$refs.calcCanvas
       const canvasHeight = canvas.height
       const canvasWidth = canvas.width
