@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" @wheel="wheelZoom">
     <div class="sidebar" :class="{ visible: sidebar }">
       <h1>Mandelbrot</h1>
       <div class="cutout">
@@ -35,8 +35,7 @@
       <button v-if="calculating" @click="cancelDrawCanvas">Cancel</button>
       <p>Progress: {{progress}} %</p>
       <p>Time spent: {{timeSpent}} ms</p>
-      <label for="zoom"></label>
-      <input type="range" name="" id="zoom" v-model="canvasZoom" max="50" min="1" step="0.1">
+      <button @click="reset" v-if="!calculating">Reset</button>
     </div>
     <button class="toggle-drawer" :class="{ outside: sidebar }" @click="sidebar = !sidebar">
       <span>«</span>
@@ -49,7 +48,9 @@
       ref="calcCanvas"
       :width="canvasWidth"
       :height="canvasHeight"
-      :style="{transform: `scale(${canvasZoom})`}"
+      :style="{
+        transform: `translate3d(${this.pan.posX}px,${this.pan.posY}px,0) scale(${canvasZoom})`
+      }"
     />
     <div
       class="selector"
@@ -72,12 +73,6 @@ export default {
   components: {},
   data () {
     return {
-      c1: 0,
-      c2: 0,
-      zX: 0,
-      zY: 0,
-      list: [],
-      doubleValues: null,
       iterations: 30,
       coords: {
         maxX: 0.5,
@@ -105,7 +100,19 @@ export default {
         width: 0,
         height: 0,
         moving: false
-      }
+      },
+      pan: {
+        x: 0,
+        y: 0,
+        posX: 0,
+        posY: 0,
+        absX: 0,
+        absY: 0
+      },
+      panning: false,
+      ctrlKey: false,
+      shiftKey: false,
+      drawInterval: null
       // coords: {
       //   minX: -1.5,
       //   maxX: -0.5,
@@ -118,18 +125,92 @@ export default {
     // window.addEventListener('resize', this.resize)
     // this.canvasWidth = window.innerWidth - 15
     // this.canvasHeight = window.innerHeight - 15
+    document.addEventListener('keydown', (e) => {
+      if (e.which === 17 && this.ctrlKey === false) {
+        this.ctrlKey = true
+      } else if (e.which === 16 && this.shiftKey) {
+        this.shiftKey = true
+      }
+    })
+    document.addEventListener('keyup', (e) => {
+      if (e.which === 17) {
+        this.ctrlKey = false
+      }
+    })
   },
   methods: {
+    reset () {
+      this.iterations = 30
+      this.coords = {
+        maxX: 0.5,
+        minX: -2,
+        maxY: 1.25,
+        minY: -1.25
+      }
+      this.canvasWidth = 800
+      this.canvasHeight = 800
+      this.canvasZoom = 1
+      this.timeSpent = 0
+      this.progress = 0
+      this.colorPalette = []
+      this.startColor = '#e6ff00'
+      this.endColor = '#ff0600'
+      this.selector = {
+        originalX: 0,
+        originalY: 0,
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0,
+        moving: false
+      }
+      this.pan = {
+        x: 0,
+        y: 0,
+        posX: 0,
+        posY: 0,
+        absX: 0,
+        absY: 0
+      }
+    },
+    wheelZoom (e) {
+      if (!this.ctrlKey) {
+        const bodyRect = document.body.getBoundingClientRect()
+        const canvas = this.$refs.calcCanvas
+        const elRect = canvas.getBoundingClientRect()
+        const offsetTop = elRect.top - bodyRect.top
+        const offsetLeft = elRect.left - bodyRect.left
+        console.log((elRect.width * this.canvasZoom) / (e.x - offsetLeft))
+        // this.pan.absX = e.x - offsetLeft
+        // this.pan.absY = e.y - offsetTop
+        this.canvasZoom -= e.deltaY / 20
+        if (this.canvasZoom < 0.8) {
+          this.canvasZoom = 0.8
+        }
+      }
+    },
     onCanvasMouseDown (e) {
-      this.selector.x = e.x
-      this.selector.y = e.y
-      this.selector.originalX = e.x
-      this.selector.originalY = e.y
-      this.selector.width = 0
-      this.selector.height = 0
-      this.selector.moving = true
+      if (this.ctrlKey) {
+        this.selector.x = e.x
+        this.selector.y = e.y
+        this.selector.originalX = e.x
+        this.selector.originalY = e.y
+        this.selector.width = 0
+        this.selector.height = 0
+        this.selector.moving = true
+      } else {
+        this.panning = true
+        this.pan.x = e.x
+        this.pan.y = e.y
+      }
     },
     onCanvasMouseMove (e) {
+      if (this.panning) {
+        this.pan.posX += e.x - this.pan.x
+        this.pan.posY += e.y - this.pan.y
+        this.pan.x = e.x
+        this.pan.y = e.y
+      }
       if (this.selector.moving) {
         const selectorWidth = e.x - this.selector.originalX
         const selectorHeight = e.y - this.selector.originalY
@@ -150,50 +231,63 @@ export default {
       }
     },
     onCanvasMouseUp (e) {
-      this.selector.moving = false
+      if (this.panning) {
+        this.panning = false
+        this.pan.panX = e.x - this.pan.x
+        this.pan.panY = e.y - this.pan.y
+      }
+      if (this.selector.moving) {
+        this.selector.moving = false
 
-      const bodyRect = document.body.getBoundingClientRect()
-      const canvas = this.$refs.calcCanvas
-      const elRect = canvas.getBoundingClientRect()
-      const offsetTop = elRect.top - bodyRect.top
-      const offsetLeft = elRect.left - bodyRect.left
-      const pointMaxX = this.selector.x - offsetLeft + this.selector.width
-      const pointMaxY = this.selector.y - offsetTop
-      const pointMinX = this.selector.x - offsetLeft
-      const pointMinY = this.selector.y - offsetTop + this.selector.height
+        const bodyRect = document.body.getBoundingClientRect()
+        const canvas = this.$refs.calcCanvas
+        const elRect = canvas.getBoundingClientRect()
+        const offsetTop = elRect.top - bodyRect.top
+        const offsetLeft = elRect.left - bodyRect.left
+        const pointMaxX = this.selector.x - offsetLeft + this.selector.width
+        const pointMaxY = this.selector.y - offsetTop
+        const pointMinX = this.selector.x - offsetLeft
+        const pointMinY = this.selector.y - offsetTop + this.selector.height
 
-      const maxCoords = Mandelbrot.getCoordinatesFromPoints(
-        { pointX: pointMaxX, pointY: pointMaxY },
-        { canvasWidth: canvas.width, canvasHeight: canvas.height },
-        { maxX: this.coords.maxX, minX: this.coords.minX, maxY: this.coords.maxY, minY: this.coords.minY }
-      )
-      const minCoords = Mandelbrot.getCoordinatesFromPoints(
-        { pointX: pointMinX, pointY: pointMinY },
-        { canvasWidth: canvas.width, canvasHeight: canvas.height },
-        { maxX: this.coords.maxX, minX: this.coords.minX, maxY: this.coords.maxY, minY: this.coords.minY }
-      )
+        const maxCoords = Mandelbrot.getCoordinatesFromPoints(
+          { pointX: pointMaxX, pointY: pointMaxY },
+          { canvasWidth: canvas.width, canvasHeight: canvas.height },
+          { maxX: this.coords.maxX, minX: this.coords.minX, maxY: this.coords.maxY, minY: this.coords.minY }
+        )
+        const minCoords = Mandelbrot.getCoordinatesFromPoints(
+          { pointX: pointMinX, pointY: pointMinY },
+          { canvasWidth: canvas.width, canvasHeight: canvas.height },
+          { maxX: this.coords.maxX, minX: this.coords.minX, maxY: this.coords.maxY, minY: this.coords.minY }
+        )
 
-      const aspect = this.selector.width / this.selector.height
-      this.canvasWidth = this.canvasHeight * aspect
+        const aspect = this.selector.width / this.selector.height
+        this.canvasWidth = this.canvasHeight * aspect
 
-      this.coords.maxX = maxCoords.coordX
-      this.coords.maxY = maxCoords.coordY
-      this.coords.minY = minCoords.coordY
-      this.coords.minX = minCoords.coordX
-      this.drawCanvas()
+        this.coords.maxX = maxCoords.coordX
+        this.coords.maxY = maxCoords.coordY
+        this.coords.minY = minCoords.coordY
+        this.coords.minX = minCoords.coordX
+        this.drawCanvas()
 
-      this.selector.width = 0
-      this.selector.height = 0
+        this.selector.width = 0
+        this.selector.height = 0
+      }
     },
     onCanvasMouseLeave (e) {
       this.selector.moving = false
+      this.panning = false
     },
     resize () {
       const canvas = this.$refs.calcCanvas
       canvas.width = window.innerWidth - 15
       canvas.height = window.innerHeight - 15
     },
-
+    cancelDrawCanvas () {
+      if (this.drawInterval) {
+        clearInterval(this.drawInterval)
+      }
+      this.calculating = false
+    },
     drawCanvas () {
       this.coords.minX = parseFloat(this.coords.minX)
       this.coords.maxX = parseFloat(this.coords.maxX)
@@ -220,7 +314,7 @@ export default {
 
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight)
       let timer = 0
-      const interval = setInterval(() => {
+      this.drawInterval = setInterval(() => {
         const pointY = timer
         let cancelBecauseMirror = false
         for (let pointX = 0; pointX <= canvasWidth; pointX++) {
@@ -253,7 +347,7 @@ export default {
         this.progress = Math.ceil(100 / canvasHeight * timer)
         timer++
         if (timer >= canvasHeight || cancelBecauseMirror === true) {
-          clearInterval(interval)
+          clearInterval(this.drawInterval)
           this.timeSpent = performance.now() - time0
           this.calculating = false
         }
@@ -468,12 +562,11 @@ body {
     }
   }
 
-  canvas{
+  canvas {
     border: 2px solid #5f5f5f;
     margin: auto;
     height: 100%;
     box-sizing: border-box;
-    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   }
 }
 </style>
